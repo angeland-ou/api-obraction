@@ -1,0 +1,24 @@
+# Variables de entorno
+.env
+.env.*
+.env.local
+.env.*.local
+
+# Dependencias
+node_modules/
+
+# Cliente generado por Prisma (se regenera con prisma generate)
+generated/
+/src/generated/prisma
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/

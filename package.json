@@ -1,0 +1,40 @@
+{
+  "name": "easyobra",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js",
+    "prisma:migrate": "dotenv -e .env.local -- npx prisma migrate dev",
+    "prisma:generate": "dotenv -e .env.local -- npx prisma generate",
+    "prisma:studio": "dotenv -e .env.local -- npx prisma studio",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Ángela López Moreiras",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.5.0",
+    "@prisma/client": "^7.5.0",
+    "@prisma/config": "^7.4.2",
+    "@supabase/supabase-js": "^2.98.0",
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.3.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.10.1",
+    "multer": "^2.1.1",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "dotenv-cli": "^11.0.0",
+    "nodemon": "^3.1.14",
+    "prisma": "^7.5.0"
+  }
+}
