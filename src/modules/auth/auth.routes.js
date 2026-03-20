@@ -7,7 +7,7 @@ router.post("/register", registerController);
 router.post("/login", loginController);
 router.post("/refresh", refreshController);
 
-// rutas protegidas (pasarán por el middleware auth cuando lo creemos)
+// rutas protegidas
 router.post("/logout", authHandler, logoutController);
 router.post("/logout-all", authHandler, logoutAllController);
 
