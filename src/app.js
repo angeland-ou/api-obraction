@@ -1,5 +1,5 @@
 // Imports
-const { PORT, CORS_ORIGIN } = require("./config/misc/constants"); // Importamos las variables de entorno
+const { CORS_ORIGIN } = require("./config/misc/constants"); // Importamos cors_origin de las variables de entorno
 const express = require("express");
 const helmet = require("helmet");
 const cors = require("cors");
@@ -7,7 +7,7 @@ const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 const errorHandler = require("./middlewares/errorHandler");
 const cookieParser = require("cookie-parser");
-const { testDbConnection } = require("./config/db");
+
 
 const app = express();
 
@@ -50,17 +50,4 @@ app.use("/api", require("./routes/index"));
 // Manejamos los errores con el Error Handler
 app.use(errorHandler);
 
-// Arrancamos el servidor comprobando que la conexión con la base de datos funciona correctamente
-const startServer = async () => {
-  try {
-    await testDbConnection();
-    app.listen(PORT, () => {
-      console.log(`🔥 Servidor corriendo en puerto ${PORT} 🚀`);
-    });
-  } catch (error) {
-    console.log("Error al arracar el servidor: ", error.message);
-    process.exit(1);
-  }
-};
-
-startServer();
+module.exports = app;
