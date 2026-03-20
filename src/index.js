@@ -40,13 +40,12 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(morgan("dev"));
 
-// Rutas
-// app.use("/api/auth", require("./modules/auth/auth.routes"));
+app.use("/api", require("./routes/index"));
 
 // Hacemos un 'Health check' para verificar que el servidor responde
-app.get("/health", (req, res) => {
-  res.json({ status: "ok" });
-});
+// app.get("/health", (req, res) => {
+//   res.json({ status: "ok" });
+// });
 
 // Manejamos los errores con el Error Handler
 app.use(errorHandler);
