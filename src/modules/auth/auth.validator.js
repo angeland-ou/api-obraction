@@ -22,3 +22,8 @@ const loginSchema = z.object({
     password: z.string()
         .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,64}$/, "La contraseña debe tener 8-64 caracteres, mayúscula, minúscula, número y símbolo"),        
 });
+
+module.exports = {
+    registerSchema,
+    loginSchema
+}

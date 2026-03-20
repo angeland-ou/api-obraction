@@ -31,4 +31,7 @@ const testDbConnection = async () => {
 };
 
 // Se exporta la instancia para usarla en toda la app
-module.exports = { testDbConnection };
+module.exports = { 
+    prisma,
+    testDbConnection
+};
