@@ -1,6 +1,6 @@
 const router = require("express").Router();
 const { registerController, loginController, logoutController, logoutAllController, refreshController } = require("../auth/auth.controller");
-const authHandler = require("../../middlewares/auth");
+const authHandler = require("../../middlewares/auth.middleware");
 
 // rutas públicas
 router.post("/register", registerController);
