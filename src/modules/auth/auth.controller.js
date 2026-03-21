@@ -1,6 +1,7 @@
 const { registerSchema, loginSchema } = require("./auth.validator");
 const authService = require("./auth.service");
 const { JWT_EXPIRES_IN, JWT_REFRESH_EXPIRES_IN, NODE_ENV, COOKIE_DOMAIN } = require("../../config/misc/constants");
+const { prisma } = require("../../config/db");
 const ms = require('ms');
 
 // Controller del registro
@@ -162,10 +163,41 @@ const refreshController = async (req, res, next) => {
    }
 }
 
+const meController = async (req, res, next) => {
+    try {
+        const { userId } = req.user;
+
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                email: true,
+                username: true,
+                role: true,
+                tenantId: true,
+                isActive: true
+            }
+        });
+
+        if(!user) {
+            return res.status(401).json({
+                error: "El usuario no existe"
+            })
+        }
+
+        res.status(200).json({ user });
+
+    } catch (error) {
+        next(error);
+    }
+
+}
+
 module.exports = {
     registerController,
     loginController,
     logoutController,
     logoutAllController,
-    refreshController
+    refreshController,
+    meController
 }
