@@ -137,7 +137,7 @@ const logoutAllController = async (req, res, next) => {
 
 const refreshController = async (req, res, next) => {
     
-   try {
+    try {
         const { refreshToken } = req.cookies;
 
         if (!refreshToken) {
@@ -158,7 +158,7 @@ const refreshController = async (req, res, next) => {
             .status(200).json({
                 message: "Token regenerado correctamente"
             })
-   } catch (error) {
+    } catch (error) {
         next(error);
    }
 }
@@ -193,11 +193,54 @@ const meController = async (req, res, next) => {
 
 }
 
+const activationController = async (req, res, next) => {
+    
+    try {
+        const { token } = req.params;
+
+        const user = await prisma.user.findFirst({
+            where: { activationToken : token}
+        })
+
+        if(!user){
+            return res.status(401).json({
+                error: "No existe usuario con ese token"
+            })
+        }
+
+        const hoursElapsed = (new Date() - new Date(user.activationSentAt));
+
+        if(hoursElapsed > ms("24h")) {
+            return res.status(401).json({
+                error: "El token ha expirado"
+            })
+        }
+
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                isActive: true,
+                activatedAt: new Date(),
+                activationToken: null,
+                activationSentAt: null
+            }
+        })
+
+        res.status(200).json({
+            message: "El usuario ha sido activado con éxito"
+        })
+        
+    } catch (error) {
+        next(error);
+    }
+}
+
 module.exports = {
     registerController,
     loginController,
     logoutController,
     logoutAllController,
     refreshController,
-    meController
+    meController, 
+    activationController
 }

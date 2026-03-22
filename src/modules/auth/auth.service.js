@@ -3,7 +3,7 @@ const crypto = require("crypto");
 const { generateUniqueSlug } = require("../../utils/slug");
 const { hashPassword, comparePassword } = require("../../utils/hash");
 const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = require("../../utils/jwt");
-
+const { sendActivationEmail } = require("../../services/email/emailService")
 
 // Función register
 const register = async (username, email, password, nif, tenantName) => {
@@ -57,6 +57,9 @@ const register = async (username, email, password, nif, tenantName) => {
                     tenantId: tenant.id
                 }
             });
+
+            // Enviamos email de activación
+            sendEmail = await sendActivationEmail(user.email, user.activationToken);
 
             return {
                 tenant: {
