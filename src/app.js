@@ -7,6 +7,8 @@ const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 const errorHandler = require("./middlewares/errorHandler");
 const cookieParser = require("cookie-parser");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./docs/swagger");
 
 
 const app = express();
@@ -39,6 +41,9 @@ app.use(rateLimit({
 app.use(express.json());
 app.use(cookieParser());
 app.use(morgan("dev"));
+
+// Documentación Swagger
+app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use("/api", require("./routes/index"));
 
