@@ -152,6 +152,20 @@ const logout = async () => {
 // Función logout de todos los dispositivos
 const logoutAll = async (userId) => {
     try {
+        const existingUser = await prisma.user.findFirst({
+            where: {
+                id: userId,
+                tenantId,
+                deletedAt: null
+            }
+        });
+
+        if(!existingUser){
+            const error = new Error("No se encuentra el usuario");
+            error.status = 401;
+            throw error;
+        }
+
         await prisma.user.update({
             where: { id: userId },
             data: {
