@@ -5,6 +5,20 @@ const createClient = async (tenantId, userId, data) => {
     try {
         const result = await prisma.$transaction(async (tx) => {
         
+            const existingClient = await tx.client.findFirst({
+                where: {
+                    tenantId: tenantId,
+                    email: data.email,
+                    deletedAt: null
+                }
+            });
+
+            if (existingClient) {
+                const error = new Error("Ya existe un cliente registrado con este email");
+                error.status = 409; // Código para conflicto
+                throw error;
+            }
+
             const client = await tx.client.create({
                 data: {
                     tenantId: tenantId,

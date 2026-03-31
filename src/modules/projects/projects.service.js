@@ -47,7 +47,15 @@ const getAllProjects = async (tenantId) => {
                 id: true,
                 name: true,
                 status: true,
-                clientId: true,
+                client: {
+                    where: {
+                        deletedAt: null
+                    },
+                    select: {
+                        id: true,
+                        name: true
+                    }
+                },
                 address: true,
                 startDate: true,
                 endDate: true,
@@ -84,6 +92,7 @@ const getProjectById = async (projectId, tenantId) => {
                 notes: true,
                 createdAt: true,
                 client: {
+                    where: { deletedAt: null },
                     select: {
                         id: true,
                         name: true,
@@ -104,6 +113,7 @@ const getProjectById = async (projectId, tenantId) => {
                     select: {
                         id: true,
                         title: true,
+                        description: true,
                         status: true,
                         dueDate: true,
                         createdAt: true
