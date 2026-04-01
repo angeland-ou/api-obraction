@@ -13,6 +13,9 @@ const swaggerSpec = require("./docs/swagger");
 
 const app = express();
 
+BigInt.prototype.toJSON = function() {
+    return this.toString();
+};
 
 // Seguridad
 
@@ -23,11 +26,32 @@ const app = express();
 //  Evitamos exponer información sensible del servidor
 //  Activa la política de seguridad de contenido CSP
 //  y fuerza conexiones seguras mediante HSTS en entornos de producción
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"], 
+      connectSrc: ["'self'", "https://api.obraction.com", "https://obraction.com"],
+      upgradeInsecureRequests: [],
+      frameAncestors: ["'none'"],
+    },
+  },
+    strictTransportSecurity: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+  },
+}));
 
 // Usamos Cors para:
 //  Controlar el origen de las peticiones, CORS_ORIGIN apuntará exclusivamente al dominio del frontend
-app.use(cors({ origin: CORS_ORIGIN }));
+app.use(cors({
+  origin: CORS_ORIGIN,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // Usamos rateLimit para:
 // Limitar el número de peticiones (global) y evitar ataques de fuerza bruta
@@ -42,8 +66,11 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(morgan("dev"));
 
-// Documentación Swagger
-app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// Docs Swagger solo si no es production
+if (process.env.NODE_ENV !== 'production') {
+  app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+}
+
 
 app.use("/api", require("./routes/index"));
 
