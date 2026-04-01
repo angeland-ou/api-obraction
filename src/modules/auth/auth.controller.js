@@ -148,11 +148,14 @@ const refreshController = async (req, res, next) => {
         
         const data = await authService.refresh(refreshToken);
 
+        const isProduction = process.env.NODE_ENV === 'production';
+
         res.cookie('accessToken', data.accessToken, {
                 httpOnly: true,
                 domain: COOKIE_DOMAIN,
-                secure: NODE_ENV === 'production',
-                sameSite: 'strict',
+                secure: isProduction,
+                sameSite: isProduction ? 'lax' : 'strict',
+                path: '/',
                 maxAge: ms(JWT_EXPIRES_IN)
             })
             .status(200).json({

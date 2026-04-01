@@ -1,15 +1,17 @@
 {
-  "name": "easyobra",
+  "name": "api-obraction",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon src/server.js",
     "start": "node src/server.js",
+    "build": "npx prisma generate",
+    "postinstall": "npx prisma generate",
+
+    "dev": "nodemon src/server.js",
     "prisma:migrate": "dotenv -e .env.local -- npx prisma migrate dev",
     "prisma:generate": "dotenv -e .env.local -- npx prisma generate",
-    "prisma:studio": "dotenv -e .env.local -- npx prisma studio",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prisma:studio": "dotenv -e .env.local -- npx prisma studio"
   },
   "keywords": [],
   "author": "Ángela López Moreiras",
