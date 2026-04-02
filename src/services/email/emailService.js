@@ -8,7 +8,7 @@ const sendActivationEmail = async (email, activationToken) => {
 
     await resend.emails.send({
         from: RESEND_FROM_EMAIL,
-        to: (NODE_ENV === "production" || NODE_ENV === "staging") ? email : RESEND_TEST_TO_EMAIL,
+        to: (NODE_ENV === "production" || NODE_ENV === "staging") ? email : RESEND_TEST_TO_EMAIL, 
         subject: "Activa tu cuenta en Obraction",
         html: `
         <h1>Bienvenido a Obraction</h1>
