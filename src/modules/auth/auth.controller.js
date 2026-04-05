@@ -7,6 +7,7 @@ const ms = require('ms');
 // Controller del registro
 const registerController = async (req, res, next) => {
     try {
+        console.log("req.body: ", req.body);
         // Validamos con Zod
         const result = registerSchema.safeParse(req.body);
         
@@ -17,10 +18,8 @@ const registerController = async (req, res, next) => {
            });
         }
 
-        const { username, email, password, nif, tenantName } = result.data;
-
         // Si ha ido bien, llamamos al service de registro de usuario
-        const data = await authService.register(username, email, password, nif, tenantName);
+        const data = await authService.register(result.data);
         
         // Devuelvo status Ok + datos devueltos por el servicio de registro (tenant, user)
         res.status(201).json({
@@ -169,6 +168,7 @@ const refreshController = async (req, res, next) => {
 const meController = async (req, res, next) => {
     try {
         const { userId } = req.user;
+        const tenantInfo = req.tenant;
 
         const user = await prisma.user.findUnique({
             where: { id: userId },
@@ -188,7 +188,13 @@ const meController = async (req, res, next) => {
             })
         }
 
-        res.status(200).json({ user });
+        res.status(200).json({ 
+            user: {
+                ...user,
+                tenantName: tenantInfo.name,
+                tenantSlug: tenantInfo.slug
+            } 
+        });
 
     } catch (error) {
         next(error);

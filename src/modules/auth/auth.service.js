@@ -6,13 +6,13 @@ const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = requir
 const { sendActivationEmail } = require("../../services/email/emailService")
 
 // Función register
-const register = async (username, email, password, nif, tenantName) => {
+const register = async (data) => {
     try {
         
-        const tenantSlug = await generateUniqueSlug(tenantName);
+        const tenantSlug = await generateUniqueSlug(data.tenantName);
 
         const userEmail = await prisma.user.findUnique({
-            where: { email }
+            where: { email: data.email }
         });
         if (userEmail) {
             const error = new Error("El email ya está registrado");
@@ -21,7 +21,7 @@ const register = async (username, email, password, nif, tenantName) => {
         }
 
         const userUsername = await prisma.user.findUnique({
-            where: { username }
+            where: { username: data.username }
         });
         if (userUsername) {
             const error = new Error("Ese nombre de usuario ya está registrado");
@@ -29,7 +29,7 @@ const register = async (username, email, password, nif, tenantName) => {
             throw error;
         }
 
-        const passwordHash = await hashPassword(password);
+        const passwordHash = await hashPassword(data.password);
 
         const activationToken = crypto.randomBytes(32).toString("hex");
 
@@ -39,7 +39,7 @@ const register = async (username, email, password, nif, tenantName) => {
         
             const tenant = await tx.tenant.create({
                 data: {
-                    name: tenantName,
+                    name: data.tenantName,
                     slug: tenantSlug,
                     isActive: true
                 }
@@ -47,9 +47,9 @@ const register = async (username, email, password, nif, tenantName) => {
 
             const user = await tx.user.create({
                 data: {
-                    username,
-                    email,
-                    nif,
+                    username: data.username,
+                    email: data.email,
+                    nif: data.nif,
                     passwordHash,
                     activationToken,
                     activationSentAt,
