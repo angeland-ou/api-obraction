@@ -1,6 +1,11 @@
 const { prisma }  = require("../config/db");
 
 async function generateUniqueSlug(name) {
+    if (!name || typeof name !== 'string') {
+        console.error("Se intentó generar un slug de un valor no válido:", name);
+        throw new Error("El nombre de empresa es obligatorio para generar un identificador único (slug)");
+    }
+
     const slugFromName = name
         .toLowerCase()           // paso a minúsculas
         .trim()                  // eliminamos los espacios del inicio y del final
