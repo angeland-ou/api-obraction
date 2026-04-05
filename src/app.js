@@ -26,14 +26,17 @@ BigInt.prototype.toJSON = function() {
 //  Evitamos exponer información sensible del servidor
 //  Activa la política de seguridad de contenido CSP
 //  y fuerza conexiones seguras mediante HSTS en entornos de producción
+
+/*
+
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'"], 
-      connectSrc: ["'self'", "https://api.obraction.com", "https://obraction.com"],
-      upgradeInsecureRequests: [],
+      connectSrc: ["'self'", "http://localhost:3000", "http://localhost:5173", "https://api.obraction.com", "https://obraction.com"],
+      upgradeInsecureRequests: null,
       frameAncestors: ["'none'"],
     },
   },
@@ -43,6 +46,9 @@ app.use(helmet({
     preload: true,
   },
 }));
+
+
+*/
 
 // Usamos Cors para:
 //  Controlar el origen de las peticiones, CORS_ORIGIN apuntará exclusivamente al dominio del frontend
@@ -74,10 +80,10 @@ if (process.env.NODE_ENV !== 'production') {
 
 app.use("/api", require("./routes/index"));
 
-// Hacemos un 'Health check' para verificar que el servidor responde
-// app.get("/health", (req, res) => {
-//   res.json({ status: "ok" });
-// });
+// 'Health check' para verificar que el servidor responde
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
+});
 
 // Manejamos los errores con el Error Handler
 app.use(errorHandler);
