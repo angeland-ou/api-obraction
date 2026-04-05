@@ -39,9 +39,31 @@ const getAllProjectsController = async (req, res, next) => {
     }
 };
 
+const getAllProjectsStatusController = async (req, res, next) => {
+    try {
+        const projects = await projectsService.getAllProjectsStatus(req.tenant.tenantId, req.params.status);
+
+        res.status(200).json({ data: projects });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
 const getProjectByIdController = async (req, res, next) => {
     try {
         const project = await projectsService.getProjectById(req.params.id,req.tenant.tenantId);
+
+        res.status(200).json({ data: project });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+const getProjectByIdBasicController = async (req, res, next) => {
+    try {
+        const project = await projectsService.getProjectByIdBasic(req.params.id,req.tenant.tenantId);
 
         res.status(200).json({ data: project });
 
@@ -93,7 +115,9 @@ const deleteProjectController = async (req, res, next) => {
 module.exports = {
     createProjectController,
     getAllProjectsController,
+    getAllProjectsStatusController,
     getProjectByIdController,
+    getProjectByIdBasicController,
     updateProjectController,
     deleteProjectController
 };

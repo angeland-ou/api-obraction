@@ -38,10 +38,58 @@ const createProject = async (tenantId, userId, data) => {
 
 const getAllProjects = async (tenantId) => {
     try {
-        const result = await prisma.project.findMany({
+
+        const projects = await prisma.project.findMany({
             where: {
                 tenantId,
                 deletedAt: null
+            },
+            select: {
+                id: true,
+                name: true,
+                status: true,
+                startDate: true
+            }
+        });
+
+        // usamos la vista de la bbdd para recuperar datos
+        const balances = await prisma.$queryRaw`
+            SELECT 
+                project_id,
+                total_income,
+                total_expenses,
+                balance
+            FROM v_project_balance
+            WHERE tenant_id = ${tenantId}::uuid
+        `;
+
+        const result = projects.map(project => {
+            const balance = balances.find(bal => bal.project_id === project.id);
+            return {
+                ...project,
+                balance: {
+                    totalIncome: balance ? Number(balance.total_income) : 0,
+                    totalExpenses: balance ? Number(balance.total_expenses) : 0,
+                    balance: balance ? Number(balance.balance) : 0
+                }
+            };
+        });
+
+        return result;
+
+    } catch (error) {
+        console.error("Error en el servicio de recuperar proyectos: ", error.message);
+        throw error;
+    }
+};
+
+const getAllProjectsStatus = async (tenantId, status) => {
+    try {
+        const result = await prisma.project.findMany({
+            where: {
+                tenantId,
+                deletedAt: null,
+                status: status
             },
             select: {
                 id: true,
@@ -66,7 +114,7 @@ const getAllProjects = async (tenantId) => {
         return result;
 
     } catch (error) {
-        console.error("Error en el servicio de recuperar proyectos: ", error.message);
+        console.error("Error en el servicio de recuperar proyectos con status: ", error.message);
         throw error;
     }
 };
@@ -160,6 +208,34 @@ const getProjectById = async (projectId, tenantId) => {
         throw error;
     }
 };
+
+const getProjectByIdBasic = async (projectId, tenantId) => {
+    try {
+        const result = await prisma.project.findFirst({
+            where: {
+                id: projectId,
+                tenantId,
+                deletedAt: null
+            },
+            select: {
+                id: true,
+                name: true
+            }
+        });
+
+        if (!result) {
+            const error = new Error("Proyecto no encontrado");
+            error.status = 404;
+            throw error;
+        }
+
+        return result;
+
+    } catch (error) {
+        console.error("Error en el servicio de recuperar proyecto basic: ", error.message);
+        throw error;
+    }
+}
 
 const updateProject = async (projectId, tenantId, userId, data) => {
     try {
@@ -286,7 +362,9 @@ const deleteProject = async (projectId, tenantId) => {
 module.exports = {
     createProject,
     getAllProjects,
-    getProjectById,
+    getAllProjectsStatus, // todos los proyectos con status determinado
+    getProjectById, 
+    getProjectByIdBasic, // id y nombre del proyecto
     updateProject,
     deleteProject
 };
