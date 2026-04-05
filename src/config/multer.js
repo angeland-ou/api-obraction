@@ -3,12 +3,12 @@ const multer = require("multer");
 const storage = multer.memoryStorage(); // guardamos en memoria antes de subir a Supabase
 
 const fileFilter = (req, file, cb) => {
-    const allowedTypes = ["application/pdf", "image/jpeg"]; 
+    const allowedTypes = ["application/pdf", "image/jpeg", "image/png"]; 
     
     if (allowedTypes.includes(file.mimetype)) {
         cb(null, true);
     } else {
-        cb(new Error("Solo se permiten archivos pdf o jpg"), false);
+        cb(new Error("Solo se permiten archivos pdf, jpg o png"), false);
     }
 };
 

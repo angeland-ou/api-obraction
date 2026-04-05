@@ -1,0 +1,244 @@
+const { prisma } = require("../../config/db");
+const { uploadFile } = require("../../services/storage/storageService");
+
+const getTenant = async (tenantId) => {
+    try {
+        const tenant = await prisma.tenant.findFirst({
+            where: { id: tenantId, deletedAt: null },
+            select: {
+                id: true,
+                name: true,
+                slug: true,
+                nif: true,
+                email: true,
+                address: true,
+                website: true,
+                phone1: true,
+                phone2: true,
+                logoPath: true,
+                primaryColor: true,
+                description: true,
+                createdAt: true
+            }
+        });
+
+        if (!tenant) {
+            const error = new Error("Empresa no encontrada");
+            error.status = 404;
+            throw error;
+        }
+
+        return tenant;
+
+    } catch (error) {
+        console.error("Error en el servicio de recuperar tenant: ", error.message);
+        throw error;
+    }
+};
+
+const uploadLogo = async (tenantId, file) => {
+    try {
+        const ext = file.mimetype === "image/png" ? "png" : "jpg";
+        const storagePath = `${tenantId}/logo/logo.${ext}`;
+
+        await uploadFile("documents", storagePath, file.buffer, file.mimetype);
+
+        const tenant = await prisma.tenant.update({
+            where: { id: tenantId },
+            data: {
+                logoPath: storagePath,
+                updatedAt: new Date()
+            },
+            select: {
+                id: true,
+                logoPath: true
+            }
+        });
+
+        return tenant;
+
+    } catch (error) {
+        console.error("Error en el servicio de subir logo: ", error.message);
+        throw error;
+    }
+};
+
+const updateTenant = async (tenantId, data, file = null) => {
+    try {
+        const existingTenant = await prisma.tenant.findFirst({
+            where: { id: tenantId, deletedAt: null }
+        });
+
+        if(file){
+            uploadLogo(tenantId, file);
+        }
+
+        if (!existingTenant) {
+            const error = new Error("Empresa no encontrada");
+            error.status = 404;
+            throw error;
+        }
+
+        // Verificar slug único si se cambia
+        if (data.slug && data.slug !== existingTenant.slug) {
+            const slugExists = await prisma.tenant.findFirst({
+                where: { slug: data.slug }
+            });
+            if (slugExists) {
+                const error = new Error("El slug ya está en uso");
+                error.status = 409;
+                throw error;
+            }
+        }
+
+        const tenant = await prisma.tenant.update({
+            where: { id: tenantId },
+            data: {
+                ...data,
+                updatedAt: new Date()
+            },
+            select: {
+                id: true,
+                name: true,
+                slug: true,
+                nif: true,
+                email: true,
+                address: true,
+                website: true,
+                phone1: true,
+                phone2: true,
+                logoPath: true,
+                primaryColor: true,
+                description: true,
+                updatedAt: true
+            }
+        });
+
+        return tenant;
+
+    } catch (error) {
+        console.error("Error en el servicio de actualizar tenant: ", error.message);
+        throw error;
+    }
+};
+
+const getGlobalBalance = async (tenantId, projectId = null, dateFrom = null, dateTo = null, order = "desc") => {
+    try {
+        const where = {
+            tenantId,
+            deletedAt: null
+        };
+
+        if (projectId) where.projectId = projectId;
+
+        if (dateFrom || dateTo) {
+            where.movementDate = {};
+
+            if (dateFrom) {
+                // que empiece a las 00:00:00.000
+                const start = new Date(dateFrom);
+                start.setHours(0, 0, 0, 0);
+                where.movementDate.gte = start;
+            }
+
+            if (dateTo) {
+                // que termine a las 23:59:59.999
+                const end = new Date(dateTo);
+                end.setHours(23, 59, 59, 999);
+                where.movementDate.lte = end;
+            }
+        }
+
+        const movements = await prisma.movement.findMany({
+            where,
+            orderBy: { movementDate: order },
+            select: {
+                amount: true,
+                ivaAmount: true,
+                total: true,
+                type: true,
+                project: {
+                    select: { name: true }
+                }
+            }
+        });
+
+        let totalIncome = 0;
+        let totalExpense = 0;
+
+        let totalIncomeIva = 0;
+        let totalExpenseIva = 0;
+
+        for (const mov of movements) {
+            const total = Number(mov.amount) || 0;
+            const totalConIva = Number(mov.total) || 0;
+
+            if (mov.type === "income") {
+                totalIncome += total;
+                totalIncomeIva += totalConIva;
+            } else {
+                totalExpense += total;
+                totalExpenseIva += totalConIva;
+            }
+        }
+
+        const projectsNumber = await prisma.project.count({
+            where: { tenantId, deletedAt: null }
+        });
+
+        const pendingTasks = await prisma.task.count({
+            where: { tenantId, status: "pending", deletedAt: null }
+        });
+
+        return {
+            // Neto
+            totalBalance: totalIncome - totalExpense,
+            totalIncome,
+            totalExpense,
+            
+            // Con IVA
+            totalBalanceIva: totalIncomeIva - totalExpenseIva,
+            totalIncomeIva,
+            totalExpenseIva,
+            
+            projectsNumber,
+            pendingTasks
+        };
+
+    } catch (error) {
+        console.error("Error en el servicio de recuperar balance global: ", error.message);
+        throw error;
+    }
+};
+
+const getTenantSimpleBalance = async (tenantId) => {
+    try {
+        const data = await prisma.$queryRaw`
+            SELECT total_income, total_expenses, balance
+            FROM v_tenant_balance
+            WHERE tenant_id = ${tenantId}::uuid
+        `;
+
+        if (!data || data.length === 0) return null;
+        
+        const result = {
+            totalIncome: Number(data[0].total_income),
+            totalExpenses: Number(data[0].total_expenses),
+            balance: Number(data[0].balance)
+        }
+
+        return result;
+
+
+    } catch (error) {
+        console.error("Error en queryRaw de balance: ", error.message);
+        throw error;
+    }
+}
+
+module.exports = {
+    getTenant,
+    updateTenant,
+    getGlobalBalance,
+    getTenantSimpleBalance
+};

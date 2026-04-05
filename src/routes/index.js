@@ -5,5 +5,6 @@ router.use("/clients", require("../modules/clients/clients.routes"));
 router.use("/projects", require("../modules/projects/projects.routes"));
 router.use("/projects/:projectId/tasks", require("../modules/tasks/tasks.routes"));
 router.use("/movements", require("../modules/movements/movements.routes"));
+router.use("/tenant", require("../modules/tenant/tenant.routes"));
 
 module.exports = router;
