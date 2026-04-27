@@ -15,7 +15,7 @@ router.use(auth);
 router.post("/logout", logoutController);
 router.post("/logout-all", logoutAllController);
 
-router.use(auth, tenant);
+router.use(tenant);
 
 router.get("/me", meController);
 
