@@ -1,4 +1,6 @@
 const { prisma } = require("../../config/db");
+const { CError, ErrorsIndex } = require("../../config/misc/errors");
+const { handlePrismaError } = require("../../utils/handlePrismaError");
 
 const createProject = async (tenantId, userId, data) => {
     try {
@@ -10,8 +12,8 @@ const createProject = async (tenantId, userId, data) => {
                 status: data.status || "pending",
                 clientId: data.clientId || null,
                 address: data.address || null,
-                lat: data.lat || null,
-                long: data.long || null,
+                lat: data.lat ?? null,
+                long: data.long ?? null,
                 startDate: data.startDate || new Date(),
                 endDate: data.endDate || null,
                 notes: data.notes || null
@@ -31,8 +33,7 @@ const createProject = async (tenantId, userId, data) => {
         return result;
 
     } catch (error) {
-        console.error("Error en el servicio de crear proyecto: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 };
 
@@ -78,8 +79,7 @@ const getAllProjects = async (tenantId) => {
         return result;
 
     } catch (error) {
-        console.error("Error en el servicio de recuperar proyectos: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 };
 
@@ -114,8 +114,7 @@ const getAllProjectsStatus = async (tenantId, status) => {
         return result;
 
     } catch (error) {
-        console.error("Error en el servicio de recuperar proyectos con status: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 };
 
@@ -196,16 +195,13 @@ const getProjectById = async (projectId, tenantId) => {
         });
 
         if (!result) {
-            const error = new Error("Proyecto no encontrado");
-            error.status = 404;
-            throw error;
+            throw new CError(ErrorsIndex.NOT_FOUND, "Proyecto no encontrado");
         }
 
         return result;
 
     } catch (error) {
-        console.error("Error en el servicio de recuperar proyecto: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 };
 
@@ -224,16 +220,13 @@ const getProjectByIdBasic = async (projectId, tenantId) => {
         });
 
         if (!result) {
-            const error = new Error("Proyecto no encontrado");
-            error.status = 404;
-            throw error;
+            throw new CError(ErrorsIndex.NOT_FOUND, "Proyecto no encontrado");
         }
 
         return result;
 
     } catch (error) {
-        console.error("Error en el servicio de recuperar proyecto basic: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 }
 
@@ -260,9 +253,7 @@ const updateProject = async (projectId, tenantId, userId, data) => {
             });
 
             if (!existingProject) {
-                const error = new Error("Proyecto no encontrado");
-                error.status = 404;
-                throw error;
+                throw new CError(ErrorsIndex.NOT_FOUND, "Proyecto no encontrado");
             }
 
             const project = await tx.project.update({
@@ -301,8 +292,7 @@ const updateProject = async (projectId, tenantId, userId, data) => {
         return result;
 
     } catch (error) {
-        console.error("Error en el servicio de actualizar proyecto: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 };
 
@@ -319,9 +309,7 @@ const deleteProject = async (projectId, tenantId) => {
             });
 
             if (!existingProject) {
-                const error = new Error("Proyecto no encontrado");
-                error.status = 404;
-                throw error;
+                throw new CError(ErrorsIndex.NOT_FOUND, "Proyecto no encontrado");
             }
 
             await tx.project.update({
@@ -354,8 +342,7 @@ const deleteProject = async (projectId, tenantId) => {
         return { message: "Proyecto eliminado correctamente (junto con sus documentos, tareas y movimientos)" };
 
     } catch (error) {
-        console.error("Error en el servicio de borrar proyecto: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 };
 
