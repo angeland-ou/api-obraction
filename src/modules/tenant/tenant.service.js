@@ -1,5 +1,7 @@
 const { prisma } = require("../../config/db");
-const { uploadFile } = require("../../services/storage/storageService");
+const { CError, ErrorsIndex } = require("../../config/misc/errors");
+const { handlePrismaError } = require("../../utils/handlePrismaError");
+const { uploadFile, getPublicUrl } = require("../../services/storage/storageService");
 
 const getTenant = async (tenantId) => {
     try {
@@ -27,6 +29,10 @@ const getTenant = async (tenantId) => {
             error.status = 404;
             throw error;
         }
+        
+        if (tenant.logoPath) {
+            tenant.logoUrl = getPublicUrl("company", tenant.logoPath);
+        }
 
         return tenant;
 
@@ -41,7 +47,7 @@ const uploadLogo = async (tenantId, file) => {
         const ext = file.mimetype === "image/png" ? "png" : "jpg";
         const storagePath = `${tenantId}/logo/logo.${ext}`;
 
-        await uploadFile("documents", storagePath, file.buffer, file.mimetype);
+        await uploadFile("company", storagePath, file.buffer, file.mimetype, true);
 
         const tenant = await prisma.tenant.update({
             where: { id: tenantId },
@@ -70,7 +76,7 @@ const updateTenant = async (tenantId, data, file = null) => {
         });
 
         if(file){
-            uploadLogo(tenantId, file);
+            await uploadLogo(tenantId, file);
         }
 
         if (!existingTenant) {
@@ -239,6 +245,7 @@ const getTenantSimpleBalance = async (tenantId) => {
 module.exports = {
     getTenant,
     updateTenant,
+    uploadLogo,
     getGlobalBalance,
     getTenantSimpleBalance
 };
