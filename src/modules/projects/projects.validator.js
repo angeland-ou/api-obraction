@@ -1,11 +1,23 @@
 const { z } = require("zod");
 
+
+const optionalDatetime = (message) => z.preprocess(
+    v => (v === '' || v === null) ? undefined : v,
+    z.string().datetime({ offset: true, message }).optional()
+);
+
 const createProjectSchema = z.object({
     name: z.string()
         .min(3, "El nombre debe tener al menos 3 caracteres")
         .max(255, "El nombre no puede superar los 255 caracteres"),
-    status: z.enum(["pending", "in_progress", "blocked", "done"])
-        .default("pending"),
+    status: z.preprocess(
+        v => {
+            return (v === '' || v === null) ? undefined : v;
+        },
+        z.enum(["pending", "in_progress", "blocked", "done"], {
+            errorMap: () => ({ message: "Estado no válido" })
+        }).default("pending")
+    ),
     clientId: z.string()
         .uuid("El cliente no es válido")
         .optional(),
@@ -18,12 +30,8 @@ const createProjectSchema = z.object({
     long: z.number()
         .min(-180).max(180)
         .optional(),
-    startDate: z.string()
-        .datetime({ offset: true })
-        .optional(),
-    endDate: z.string()
-        .datetime({ offset: true })
-        .optional(),
+    startDate: optionalDatetime("La fecha de inicio no tiene un formato válido"),
+    endDate: optionalDatetime("La fecha de fin no tiene un formato válido" ),
     notes: z.string()
         .optional()
 });

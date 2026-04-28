@@ -1,5 +1,10 @@
 const { z } = require("zod");
 
+const optionalDatetime = (message) => z.preprocess(
+    v => (v === '' || v === null) ? undefined : v,
+    z.string().datetime({ offset: true, message }).optional()
+);
+
 const createTaskSchema = z.object({
     title: z.string()
         .min(3, "El título debe tener al menos 3 caracteres")
@@ -7,10 +12,16 @@ const createTaskSchema = z.object({
     description: z.string()
         .max(255, "La descripción no puede superar los 255 caracteres")
         .optional(),
-    status: z.enum(["pending", "done"])
-        .default("pending"),
-    dueDate: z.coerce.date()
-        .optional()
+    status: z.preprocess(
+    v => (v === '' || v === null) ? undefined : v,
+    z.enum(["pending", "done"], {
+        errorMap: () => ({ message: "Estado no válido" })
+    }).default("pending")
+),
+    dueDate: z.preprocess(
+        v => (v === '' || v === null) ? undefined : v,
+        z.coerce.date({ error: "La fecha no es válida" }).optional()
+    )
 });
 
 const updateTaskSchema = createTaskSchema.partial();
