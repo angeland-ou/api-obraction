@@ -14,13 +14,12 @@ const registerSchema = z.object({
         .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,64}$/, "La contraseña debe tener 8-64 caracteres, mayúscula, minúscula, número y símbolo"),
     tenantName: z.string()
         .min(2, "El nombre de la empresa debe tener mínimo 2 caracteres")
-        .max(255, "El nombre de usuario no puede superar los 255 caracteres"),
+        .max(255, "El nombre de empresa no puede superar los 255 caracteres"),
 });
 
 const loginSchema = z.object({
     email: z.email("La dirección de correo no es válida"),
-    password: z.string()
-        .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,64}$/, "La contraseña debe tener 8-64 caracteres, mayúscula, minúscula, número y símbolo"),        
+    password: z.string().min(1, "Introduce tu contraseña"),
 });
 
 module.exports = {
