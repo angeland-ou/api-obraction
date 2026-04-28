@@ -1,19 +1,13 @@
 const { createClientSchema, updateClientSchema } = require("./clients.validator");
 const clientsService = require("./clients.service");
+const { CError, ErrorsIndex } = require("../../config/misc/errors");
 
 const createClientController = async (req, res, next) => {
     try {
-        // console.log("Body recibido:", req.body); 
         const result = createClientSchema.safeParse(req.body);
-        // console.log("Resultado validación:", result);
 
         if(!result.success){
-            return res.status(400).json({
-                error: "Datos no válidos",
-                // devolvemos los mensajes de los campos que fallaron 
-                // los que configuramos en el Schema de validación de Zod
-                details: result.error.errors
-            });
+            return next(new CError(ErrorsIndex.VALIDATION_ERROR, result.error.issues));
         }
 
         const newClient = await clientsService.createClient(req.tenant.tenantId, req.user.userId, result.data);
@@ -21,6 +15,7 @@ const createClientController = async (req, res, next) => {
         // si ha ido bien devolvemos status ok + mensaje y datos del cliente creado 
         // devueltos por el servicio de createClient
         res.status(201).json({
+            success: true,
             message: "El cliente ha sido creado con éxito",
             data: newClient
         })
@@ -34,6 +29,8 @@ const getAllClientsController = async (req, res, next) => {
         const clients = await clientsService.getAllClients(req.tenant.tenantId);
 
         res.status(200).json({
+            success: true,
+            message: "Clientes cargados correctamente",
             data: clients
         })
     } catch (error) {
@@ -46,6 +43,8 @@ const getClientByIdController = async (req, res, next) => {
         const client = await clientsService.getClientById(req.params.id, req.tenant.tenantId);
 
         res.status(200).json({
+            success: true,
+            message: "Cliente encontrado",
             data: client
         })
     } catch (error) {
@@ -58,12 +57,7 @@ const updateClientController = async (req, res, next) => {
         const result = updateClientSchema.safeParse(req.body);
 
         if(!result.success){
-            return res.status(400).json({
-                error: "Datos no válidos",
-                // devolvemos los mensajes de los campos que fallaron 
-                // los que configuramos en el Schema de validación de Zod
-                details: result.error.errors
-            });
+            return next(new CError(ErrorsIndex.VALIDATION_ERROR, result.error.issues));
         }
 
         const data = { ...result.data, id: req.params.id };
@@ -71,6 +65,7 @@ const updateClientController = async (req, res, next) => {
         const updateClient = await clientsService.updateClient(req.tenant.tenantId, req.user.userId, data);
         
         res.status(200).json({
+            success: true,
             message: "El cliente ha sido actualizado con éxito",
             data: updateClient
         });
@@ -87,6 +82,7 @@ const deleteClientController = async (req, res, next) => {
         await clientsService.deleteClient(req.tenant.tenantId, req.params.id);
 
         res.status(200).json({
+            success: true,
             message: "El cliente ha sido borrado con éxito",
         });
         

@@ -1,4 +1,6 @@
 const { prisma }  = require("../../config/db");
+const { CError, ErrorsIndex } = require("../../config/misc/errors");
+const { handlePrismaError } = require("../../utils/handlePrismaError");
 
 const createClient = async (tenantId, userId, data) => {
 
@@ -14,9 +16,7 @@ const createClient = async (tenantId, userId, data) => {
             });
 
             if (existingClient) {
-                const error = new Error("Ya existe un cliente registrado con este email");
-                error.status = 409; // Código para conflicto
-                throw error;
+                throw CError(ErrorsIndex.CONFLICT, "Ya existe un cliente con ese email");
             }
 
             const client = await tx.client.create({
@@ -61,8 +61,7 @@ const createClient = async (tenantId, userId, data) => {
         return result;
 
     } catch (error) {
-        console.error("Error en el servicio de crear cliente: ", error.message);
-        throw error;
+        handlePrismaError(error)
     }
 };
 
@@ -87,8 +86,7 @@ const getAllClients = async (tenantId) => {
         return result;
 
     } catch (error) {
-        console.error("Error en el servicio de recuperar clientes: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 }
 
@@ -118,16 +116,13 @@ const getClientById = async (clientId, tenantId) => {
         });
 
         if (!result) {
-            const error = new Error("Cliente no encontrado");
-            error.status = 404;
-            throw error;
+            throw new CError(ErrorsIndex.NOT_FOUND, "Cliente no encontrado");
         }
 
         return result;
 
     } catch (error) {
-        console.error("Error en el servicio de recuperar cliente: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 }
 
@@ -145,9 +140,7 @@ const updateClient = async (tenantId, userId, data) => {
             })
 
             if (!existingClient) {
-                const error = new Error("Cliente no encontrado");
-                error.status = 404;
-                throw error;
+              throw new CError(ErrorsIndex.NOT_FOUND, "Cliente no encontrado");
             }
         
             const client = await tx.client.update({
@@ -222,9 +215,7 @@ const deleteClient = async (tenantId, clientId) => {
             })
 
             if (!existingClient) {
-                const error = new Error("Cliente no encontrado");
-                error.status = 404;
-                throw error;
+                throw new CError(ErrorsIndex.NOT_FOUND, "Cliente no encontrado");
             }
 
             await tx.client.update({
