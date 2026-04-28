@@ -1,8 +1,7 @@
 const app = require("./app");
 const { testDbConnection } = require("./config/db");
-const { PORT } = require("./config/misc/constants"); // Importamos el puerto de las variables de entorno
+const { PORT } = require("./config/misc/constants");
 
-// Arrancamos el servidor comprobando que la conexión con la base de datos funciona correctamente
 const startServer = async () => {
   try {
     await testDbConnection();

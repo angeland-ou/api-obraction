@@ -1,19 +1,22 @@
-// Creamos el manejador de errores para recibir los errores que puedan generar las peticiones de nuestra app
+const { CError, errorsCatalog } = require("../config/misc/errors");
+// Manejador de errores para recibir errores en las peticiones de nuestra app
 const errorHandler = (err, req, res, next) => {
-  console.error(err.stack);
 
-  // Si el error tiene un estado, devolvemos el status, sino devolvemos un error interno del servidor (500)
-  const status = err.status || 500;
-  // Devolvemos el mensaje, y si no hay, "Error interno del servidor"
-  const message = err.message || "Error interno del servidor";
+  console.error(`[${new Date().toISOString()}] ${err.message}`, err.stack);
+  const isCError = err instanceof CError;
+  const catalogError = isCError ? errorsCatalog[err.errorType] : null;
 
-  // devolvemos la respuesta JSON con el error
+
+  const status = catalogError?.status || err.status || 500;
+  const message = isCError ? err.message : "Error interno del servidor";
+
   res.status(status).json({
-    error: {
+      success: false,
+      error: {
       message,
+      ...(err.details && { details: err.details }),
       // si no estamos en entorno producción, devolvemos también el stack trace
-      // en producción no enviamos esta información por seguridad
-      ...(process.env.NODE_ENV !== "production" && { stack: err.stack })
+      ...(process.env.NODE_ENV === "development" && { stack: err.stack })
     }
   });
 };
