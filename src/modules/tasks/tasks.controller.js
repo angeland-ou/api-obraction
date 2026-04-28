@@ -1,23 +1,20 @@
 const { createTaskSchema, updateTaskSchema } = require("./tasks.validator");
 const tasksService = require("./tasks.service");
+const { CError, ErrorsIndex } = require("../../config/misc/errors");
 
 const createTaskController = async (req, res, next) => {
     try {
         const result = createTaskSchema.safeParse(req.body);
 
         if(!result.success){
-            return res.status(400).json({
-                error: "Datos no válidos",
-                // devolvemos los mensajes de los campos que fallaron 
-                // configurados en el Schema de validación de Zod
-                details: result.error.errors
-            });
+            return next(new CError(ErrorsIndex.VALIDATION_ERROR, result.error.issues));
         }
 
         const newTask = await tasksService.createTask(req.params.projectId, req.tenant.tenantId, req.user.userId, result.data);
 
         res.status(201).json({
-            message: "La tarea ha sido creado con éxito",
+            success: true,
+            message: "La tarea ha sido creada con éxito",
             data: newTask    
         })
 
@@ -32,17 +29,13 @@ const  updateTaskController = async (req, res, next) => {
         const result = updateTaskSchema.safeParse(req.body);
 
         if(!result.success){
-            return res.status(400).json({
-                error: "Datos no válidos",
-                // devolvemos los mensajes de los campos que fallaron 
-                // configurados en el Schema de validación de Zod
-                details: result.error.errors
-            });
+            return next(new CError(ErrorsIndex.VALIDATION_ERROR, result.error.issues));
         }
 
         const updatedTask = await tasksService.updateTask(req.params.id, req.params.projectId, req.tenant.tenantId, result.data);
 
         res.status(200).json({
+            success: true,
             message: "La tarea ha sido actualizada con éxito",
             data: updatedTask
         });
@@ -58,6 +51,8 @@ const  getTaskByIdController = async (req, res, next) => {
         const task = await tasksService.getTaskById(req.params.id, req.params.projectId, req.tenant.tenantId);
 
         res.status(200).json({
+            success: true,
+            message: "Tarea encontrada",
             data: task
         })
 
@@ -72,6 +67,8 @@ const  getAllTasksController = async (req, res, next) => {
         const tasks = await tasksService.getAllTasks(req.params.projectId, req.tenant.tenantId);
 
         res.status(200).json({
+            success: true,
+            message: "Tareas encontradas",
             data: tasks
         })
 
@@ -86,7 +83,8 @@ const  deleteTaskController = async (req, res, next) => {
         await tasksService.deleteTask(req.params.id, req.params.projectId, req.tenant.tenantId)
 
         res.status(200).json({
-            message: "La tarea ha sido borrado con éxito",
+            success: true,
+            message: "La tarea ha sido borrada con éxito"
         });
 
     } catch (error) {
