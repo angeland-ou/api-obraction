@@ -1,4 +1,6 @@
 const { prisma }  = require("../../config/db");
+const { CError, ErrorsIndex } = require("../../config/misc/errors");
+const { handlePrismaError } = require("../../utils/handlePrismaError");
 
 const createTask = async (projectId, tenantId, userId, data) => {
     try {
@@ -17,8 +19,7 @@ const createTask = async (projectId, tenantId, userId, data) => {
         return result;
 
     } catch (error) {
-        console.error("Error en el servicio de crear tarea: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 };
 
@@ -36,9 +37,7 @@ const updateTask = async (taskId, projectId, tenantId, data) => {
             })
 
             if (!existingTask) {
-                const error = new Error("Tarea no encontrada");
-                error.status = 404;
-                throw error;
+                throw new CError(ErrorsIndex.NOT_FOUND, "Tarea no encontrada");
             }
 
             const task = await tx.task.update({
@@ -69,8 +68,7 @@ const updateTask = async (taskId, projectId, tenantId, data) => {
         return result;
 
     } catch (error) {
-        console.error("Error en el servicio de actualizar tarea: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 };
 
@@ -95,8 +93,7 @@ const getAllTasks = async (projectId, tenantId) => {
         return result;
 
     } catch (error) {
-        console.error("Error en el servicio de recuperar tareas: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 };
 
@@ -119,15 +116,13 @@ const getTaskById = async (taskId, projectId, tenantId) => {
         });
 
         if (!result) {
-            const error = new Error("Tarea no encontrada");
-            error.status = 404;
-            throw error;
+            throw new CError(ErrorsIndex.NOT_FOUND, "Tarea no encontrada");
         }
 
         return result;
+
     } catch (error) {
-        console.error("Error en el servicio de recuperar tarea: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 };
 
@@ -146,9 +141,7 @@ const deleteTask = async (taskId, projectId, tenantId) => {
             })
 
             if (!existingTask) {
-                const error = new Error("Tarea no encontrada");
-                error.status = 404;
-                throw error;
+                throw new CError(ErrorsIndex.NOT_FOUND, "Tarea no encontrada");
             }
 
             await tx.task.update({
@@ -170,8 +163,7 @@ const deleteTask = async (taskId, projectId, tenantId) => {
         return result;
     
     }catch(error){
-        console.error("Error en el servicio de borrar tarea: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 }
 
