@@ -1,4 +1,6 @@
 const { prisma } = require("../config/db");
+const { CError, ErrorsIndex } = require("../config/misc/errors");
+const { handlePrismaError } = require("../utils/handlePrismaError");
 
 const tenantHandler = async (req, res, next) => {
 
@@ -12,17 +14,9 @@ const tenantHandler = async (req, res, next) => {
             }
         })
 
-        if (!tenant){
-            return res.status(401).json({
-                error: "La empresa no existe"
-            })
-        }
+        if (!tenant) throw new CError(ErrorsIndex.UNAUTHORIZED);
 
-        if(!tenant.isActive){
-            return res.status(401).json({
-                error: "La empresa no está activa"
-            })
-        }
+        if(!tenant.isActive) throw new CError(ErrorsIndex.UNAUTHORIZED);
 
         req.tenant = {
             tenantId: tenant.id,
