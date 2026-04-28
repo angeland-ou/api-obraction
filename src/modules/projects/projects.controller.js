@@ -1,15 +1,13 @@
 const { createProjectSchema, updateProjectSchema } = require("./projects.validator");
 const projectsService = require("./projects.service");
+const { CError, ErrorsIndex } = require("../../config/misc/errors");
 
 const createProjectController = async (req, res, next) => {
     try {
         const result = createProjectSchema.safeParse(req.body);
 
         if (!result.success) {
-            return res.status(400).json({
-                error: "Datos no válidos",
-                details: result.error.errors
-            });
+            next(new CError(ErrorsIndex.VALIDATION_ERROR, result.error.issues));
         }
 
         const newProject = await projectsService.createProject(
@@ -19,6 +17,7 @@ const createProjectController = async (req, res, next) => {
         );
 
         res.status(201).json({
+            success: true,
             message: "Proyecto creado con éxito",
             data: newProject
         });
@@ -32,7 +31,10 @@ const getAllProjectsController = async (req, res, next) => {
     try {
         const projects = await projectsService.getAllProjects(req.tenant.tenantId);
 
-        res.status(200).json({ data: projects });
+        res.status(200).json({ 
+            success: true,
+            message: "Proyectos encontrados",
+            data: projects });
 
     } catch (error) {
         next(error);
@@ -43,7 +45,11 @@ const getAllProjectsStatusController = async (req, res, next) => {
     try {
         const projects = await projectsService.getAllProjectsStatus(req.tenant.tenantId, req.params.status);
 
-        res.status(200).json({ data: projects });
+        res.status(200).json({ 
+            success: true,
+            message: `Proyectos con estado ${req.params.status} encontrados`,
+            data: projects
+        });
 
     } catch (error) {
         next(error);
@@ -54,7 +60,11 @@ const getProjectByIdController = async (req, res, next) => {
     try {
         const project = await projectsService.getProjectById(req.params.id,req.tenant.tenantId);
 
-        res.status(200).json({ data: project });
+        res.status(200).json({
+            success: true,
+            message: "Proyecto encontrado",
+            data: project
+        });
 
     } catch (error) {
         next(error);
@@ -65,7 +75,10 @@ const getProjectByIdBasicController = async (req, res, next) => {
     try {
         const project = await projectsService.getProjectByIdBasic(req.params.id,req.tenant.tenantId);
 
-        res.status(200).json({ data: project });
+        res.status(200).json({
+            success: true,
+            message: "Proyecto encontrado",
+            data: project });
 
     } catch (error) {
         next(error);
@@ -77,10 +90,7 @@ const updateProjectController = async (req, res, next) => {
         const result = updateProjectSchema.safeParse(req.body);
 
         if (!result.success) {
-            return res.status(400).json({
-                error: "Datos no válidos",
-                details: result.error.errors
-            });
+            return next(new CError(ErrorsIndex.VALIDATION_ERROR, result.error.issues));
         }
 
         const updatedProject = await projectsService.updateProject(
@@ -90,6 +100,7 @@ const updateProjectController = async (req, res, next) => {
             result.data);
 
         res.status(200).json({
+            success: true,
             message: "Proyecto actualizado con éxito",
             data: updatedProject
         });
@@ -104,6 +115,7 @@ const deleteProjectController = async (req, res, next) => {
         await projectsService.deleteProject(req.params.id, req.tenant.tenantId);
 
         res.status(200).json({
+            success: true,
             message: "Proyecto eliminado correctamente"
         });
 
