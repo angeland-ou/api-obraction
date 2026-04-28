@@ -19,8 +19,11 @@ const createTaskSchema = z.object({
     }).default("pending")
 ),
     dueDate: z.preprocess(
-        v => (v === '' || v === null) ? undefined : v,
-        z.coerce.date({ error: "La fecha no es válida" }).optional()
+        v => (v === '' || v === null) ? null : v,
+        z.union([
+            z.null(),
+            z.coerce.date({ error: "La fecha no es válida" }).optional()
+        ])
     )
 });
 
