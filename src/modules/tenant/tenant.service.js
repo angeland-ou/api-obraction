@@ -25,9 +25,7 @@ const getTenant = async (tenantId) => {
         });
 
         if (!tenant) {
-            const error = new Error("Empresa no encontrada");
-            error.status = 404;
-            throw error;
+              throw new CError(ErrorsIndex.NOT_FOUND, "Empresa no encontrada");
         }
         
         if (tenant.logoPath) {
@@ -37,8 +35,7 @@ const getTenant = async (tenantId) => {
         return tenant;
 
     } catch (error) {
-        console.error("Error en el servicio de recuperar tenant: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 };
 
@@ -64,8 +61,7 @@ const uploadLogo = async (tenantId, file) => {
         return tenant;
 
     } catch (error) {
-        console.error("Error en el servicio de subir logo: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 };
 
@@ -75,14 +71,12 @@ const updateTenant = async (tenantId, data, file = null) => {
             where: { id: tenantId, deletedAt: null }
         });
 
-        if(file){
-            await uploadLogo(tenantId, file);
+        if (!existingTenant) {
+            throw new CError(ErrorsIndex.NOT_FOUND, "Empresa no encontrada");
         }
 
-        if (!existingTenant) {
-            const error = new Error("Empresa no encontrada");
-            error.status = 404;
-            throw error;
+        if(file){
+            await uploadLogo(tenantId, file);
         }
 
         // Verificar slug único si se cambia
@@ -91,9 +85,7 @@ const updateTenant = async (tenantId, data, file = null) => {
                 where: { slug: data.slug }
             });
             if (slugExists) {
-                const error = new Error("El slug ya está en uso");
-                error.status = 409;
-                throw error;
+                throw new CError(ErrorsIndex.CONFLICT, "El slug debe ser diferente");
             }
         }
 
@@ -123,8 +115,7 @@ const updateTenant = async (tenantId, data, file = null) => {
         return tenant;
 
     } catch (error) {
-        console.error("Error en el servicio de actualizar tenant: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 };
 
@@ -212,8 +203,7 @@ const getGlobalBalance = async (tenantId, projectId = null, dateFrom = null, dat
         };
 
     } catch (error) {
-        console.error("Error en el servicio de recuperar balance global: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 };
 
@@ -237,8 +227,7 @@ const getTenantSimpleBalance = async (tenantId) => {
 
 
     } catch (error) {
-        console.error("Error en queryRaw de balance: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 }
 
