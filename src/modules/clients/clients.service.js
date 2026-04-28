@@ -16,7 +16,7 @@ const createClient = async (tenantId, userId, data) => {
             });
 
             if (existingClient) {
-                throw CError(ErrorsIndex.CONFLICT, "Ya existe un cliente con ese email");
+                throw new CError(ErrorsIndex.CONFLICT, "Ya existe un cliente con ese email");
             }
 
             const client = await tx.client.create({
@@ -61,7 +61,7 @@ const createClient = async (tenantId, userId, data) => {
         return result;
 
     } catch (error) {
-        handlePrismaError(error)
+        handlePrismaError(error);
     }
 };
 
@@ -196,8 +196,7 @@ const updateClient = async (tenantId, userId, data) => {
         return result;
 
     }catch(error){
-        console.error("Error en el servicio de actualizar cliente: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 }
 
@@ -247,8 +246,7 @@ const deleteClient = async (tenantId, clientId) => {
         return result;
     
     }catch(error){
-        console.error("Error en el servicio de borrar un cliente: ", error.message);
-        throw error;
+        handlePrismaError(error)
     }
 }
 
