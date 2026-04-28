@@ -6,5 +6,6 @@ router.use("/projects", require("../modules/projects/projects.routes"));
 router.use("/projects/:projectId/tasks", require("../modules/tasks/tasks.routes"));
 router.use("/movements", require("../modules/movements/movements.routes"));
 router.use("/tenant", require("../modules/tenant/tenant.routes"));
+router.use('/api/documents', require("../modules/documents/documents.routes"));
 
 module.exports = router;
