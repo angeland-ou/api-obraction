@@ -1,4 +1,6 @@
 const { prisma } = require("../../config/db");
+const { CError, ErrorsIndex } = require("../../config/misc/errors");
+const { handlePrismaError } = require("../../utils/handlePrismaError");
 const { uploadFile, deleteFile } = require("../../services/storage/storageService");
 
 const createMovement = async (tenantId, userId, data, file = null) => {
@@ -62,8 +64,7 @@ const createMovement = async (tenantId, userId, data, file = null) => {
         return result;
 
     } catch (error) {
-        console.error("Error en el servicio de crear movimiento: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 };
 
@@ -103,8 +104,7 @@ const getAllMovements = async (tenantId, projectId = null) => {
         return result;
 
     } catch (error) {
-        console.error("Error en el servicio de recuperar movimientos: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 };
 
@@ -135,42 +135,69 @@ const getMovementById = async (id, tenantId) => {
         });
 
         if (!result) {
-            const error = new Error("Movimiento no encontrado");
-            error.status = 404;
-            throw error;
+            throw new CError(ErrorsIndex.NOT_FOUND, "Movimiento no encontrado");
         }
 
         return result;
 
     } catch (error) {
-        throw error;
+        handlePrismaError(error);
     }
 };
 
-const updateMovement = async (id, tenantId, data) => {
+const updateMovement = async (id, tenantId, userId, data, file = null) => {
     try {
         // verificamos que existe
         await getMovementById(id, tenantId);
 
+        // si hay archivo nuevo lo subimos
+        if (file) {
+            const ext = file.mimetype === "application/pdf" ? "pdf" : "jpg";
+            const storagePath = `${tenantId}/movements/${id}.${ext}`;
+
+            await uploadFile("documents", storagePath, file.buffer, file.mimetype, true);
+
+            // buscamos si ya había documento para actualizarlo o crear uno nuevo
+            const existing = await prisma.document.findFirst({
+                where: { movementId: id, tenantId, deletedAt: null }
+            });
+
+            if (existing) {
+                await prisma.document.update({
+                    where: { id: existing.id },
+                    data: {
+                        mimeType: file.mimetype,
+                        originalName: file.originalname,
+                        storagePath,
+                        sizeBytes: file.size,
+                        updatedAt: new Date()
+                    }
+                });
+            } else {
+                await prisma.document.create({
+                    data: {
+                        tenantId,
+                        movementId: id,
+                        createdById: userId,
+                        mimeType: file.mimetype,
+                        originalName: file.originalname,
+                        storagePath,
+                        sizeBytes: file.size
+                    }
+                });
+            }
+        }
+
         const result = await prisma.movement.update({
             where: { id },
-            data: {
-                ...data,
-                updatedAt: new Date()
-            }, 
+            data: { ...data, updatedAt: new Date() },
             include: {
-                project: {
-                    select: { name: true }
-                },
+                project: { select: { name: true } },
                 documents: {
                     where: { deletedAt: null },
                     select: {
-                        id: true,
-                        originalName: true,
-                        mimeType: true,
-                        sizeBytes: true,
-                        storagePath: true,
-                        createdAt: true
+                        id: true, originalName: true, mimeType: true,
+                        sizeBytes: true, storagePath: true, createdAt: true
                     }
                 }
             }
@@ -179,7 +206,7 @@ const updateMovement = async (id, tenantId, data) => {
         return result;
 
     } catch (error) {
-        throw error;
+        handlePrismaError(error);
     }
 };
 
@@ -197,9 +224,7 @@ const deleteMovement = async (id, tenantId) => {
             });
 
             if (!existingMovement) {
-                const error = new Error("Movimiento no encontrado");
-                error.status = 404;
-                throw error;
+                throw new CError(ErrorsIndex.NOT_FOUND, "Movimiento no encontrado");
             }
 
             // borramos archivos del storage para liberar el espacio y registros de la bbdd
@@ -220,8 +245,7 @@ const deleteMovement = async (id, tenantId) => {
         return { message: "Movimiento eliminado con éxito" };
 
     } catch (error) {
-        console.error("Error en el servicio de borrar movimiento: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 };
 
