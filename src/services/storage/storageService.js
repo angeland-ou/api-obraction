@@ -1,8 +1,8 @@
 const providerName = process.env.STORAGE_PROVIDER || "supabase";
 const provider = require(`./providers/${providerName}Provider`);
 
-const uploadFile = async (bucket, path, file, mimetype) => {
-    return await provider.upload(bucket, path, file, mimetype);
+const uploadFile = async (bucket, path, file, mimetype, upsert = false) => {
+    return await provider.upload(bucket, path, file, mimetype, upsert);
 };
 
 const deleteFile = async (bucket, path) => {
@@ -13,4 +13,8 @@ const getPublicUrl = (bucket, path) => {
     return provider.getPublicUrl(bucket, path);
 };
 
-module.exports = { uploadFile, deleteFile, getPublicUrl };
+const getSignedUrl = async (bucket, path, expiresIn = 3600) => {
+    return await provider.getSignedUrl(bucket, path, expiresIn);
+};
+
+module.exports = { uploadFile, deleteFile, getPublicUrl, getSignedUrl };
