@@ -1,4 +1,6 @@
 const { prisma }  = require("../../config/db");
+const { CError, ErrorsIndex } = require("../../config/misc/errors");
+const { handlePrismaError } = require("../../utils/handlePrismaError");
 const crypto = require("crypto");
 const { generateUniqueSlug } = require("../../utils/slug");
 const { hashPassword, comparePassword } = require("../../utils/hash");
@@ -14,20 +16,12 @@ const register = async (data) => {
         const userEmail = await prisma.user.findUnique({
             where: { email: data.email }
         });
-        if (userEmail) {
-            const error = new Error("El email ya está registrado");
-            error.status = 409;
-            throw error;
-        }
+        if (userEmail) throw new CError(ErrorsIndex.CONFLICT, "Si los datos son correctos, recibirás un email de activación");
 
         const userUsername = await prisma.user.findUnique({
             where: { username: data.username }
         });
-        if (userUsername) {
-            const error = new Error("Ese nombre de usuario ya está registrado");
-            error.status = 409;
-            throw error;
-        }
+        if (userUsername) throw new CError(ErrorsIndex.CONFLICT, "Si los datos son correctos, recibirás un email de activación");
 
         const passwordHash = await hashPassword(data.password);
 
@@ -63,26 +57,25 @@ const register = async (data) => {
 
             return {
                 tenant: {
-                id: tenant.id,
-                name: tenant.name,
-                slug: tenant.slug
+                    id: tenant.id,
+                    name: tenant.name,
+                    slug: tenant.slug
             },
-            user: {
-                id: user.id,
-                email: user.email,
-                username: user.username,
-                role: user.role,
-                tenantId: user.tenantId,
-                isActive: user.isActive
-            }
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    username: user.username,
+                    role: user.role,
+                    tenantId: user.tenantId,
+                    isActive: user.isActive
+                }
             };
         });
         
         return result;
 
     } catch(error) {
-        console.error("Error en el servicio de auth register: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 }
 
@@ -93,23 +86,13 @@ const login = async (email, password) => {
         const user = await prisma.user.findUnique({
             where: { email }
         })
-        if(!user){
-            const error = new Error("El email o la contraseña son incorrectos");
-            error.status = 401;
-            throw error;
-        }
-        if(!user.isActive){
-            const error = new Error("El usuario no está activo, por favor revisa tu email");
-            error.status = 401;
-            throw error;
-        }
+
+        if(!user) throw new CError(ErrorsIndex.BAD_INFO);
+        if(!user.isActive) throw new CError(ErrorsIndex.UNAUTHORIZED, "El usuario no está activo");
         
         const isPasswordValid = await comparePassword(password, user.passwordHash);
-        if(!isPasswordValid){
-            const error = new Error("El email o la contraseña son incorrectos");
-            error.status = 401;
-            throw error;
-        }
+
+        if(!isPasswordValid) throw new CError(ErrorsIndex.BAD_INFO);
 
         const payload = {
             userId: user.id,
@@ -137,8 +120,7 @@ const login = async (email, password) => {
         }
 
     } catch (error) {
-        console.error("Error en el servicio de auth login: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 
     
@@ -161,9 +143,7 @@ const logoutAll = async (userId) => {
         });
 
         if(!existingUser){
-            const error = new Error("No se encuentra el usuario");
-            error.status = 401;
-            throw error;
+            if (!existingUser) throw new CError(ErrorsIndex.UNAUTHORIZED);
         }
 
         await prisma.user.update({
@@ -176,8 +156,7 @@ const logoutAll = async (userId) => {
         return { message: "Se ha cerrado sesión en todos los dispositivos" }
 
     } catch (error) {
-        console.error("Error al cerrar sesión en todos los dispositivos: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 }
 
@@ -190,23 +169,9 @@ const refresh = async (token) => {
                 where: { id: tokenPayload.userId }
             });
 
-        if(!user) {
-            const error = new Error("El usuario no existe");
-            error.status = 401;
-            throw error;
-        }
-
-        if (tokenPayload.tokenVersion !== user.tokenVersion){
-            const error = new Error("El usuario debe iniciar sesión de nuevo");
-            error.status = 401;
-            throw error;
-        }
-
-        if (!user.isActive){
-            const error = new Error("El usuario no está activo, por favor revisa tu email o ponte en contacto con el administrador de la aplicación");
-            error.status = 401;
-            throw error;
-        }
+        if(!user) throw new CError(ErrorsIndex.UNAUTHORIZED);
+        if (tokenPayload.tokenVersion !== user.tokenVersion) throw new CError(ErrorsIndex.UNAUTHORIZED);
+        if (!user.isActive) throw new CError(ErrorsIndex.UNAUTHORIZED);
 
         const newAccessToken = generateAccessToken({
             userId: user.id, 
@@ -216,11 +181,9 @@ const refresh = async (token) => {
         })
 
         return { accessToken: newAccessToken };
-        
 
     } catch (error) {
-        console.error("Error en el servicio de auth refresh: ", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 
 }

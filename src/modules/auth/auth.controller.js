@@ -1,4 +1,5 @@
 const { registerSchema, loginSchema } = require("./auth.validator");
+const { CError, ErrorsIndex } = require("../../config/misc/errors");
 const authService = require("./auth.service");
 const { JWT_EXPIRES_IN, JWT_REFRESH_EXPIRES_IN, NODE_ENV, COOKIE_DOMAIN } = require("../../config/misc/constants");
 const { prisma } = require("../../config/db");
@@ -7,22 +8,17 @@ const ms = require('ms');
 // Controller del registro
 const registerController = async (req, res, next) => {
     try {
-        console.log("req.body: ", req.body);
         // Validamos con Zod
         const result = registerSchema.safeParse(req.body);
         
-        if(!result.success) {
-            return res.status(400).json({
-                error: "Datos no válidos",
-                details: result.error.errors
-           });
-        }
+        if(!result.success) return next(new CError(ErrorsIndex.VALIDATION_ERROR, result.error.issues));
 
         // Si ha ido bien, llamamos al service de registro de usuario
         const data = await authService.register(result.data);
         
         // Devuelvo status Ok + datos devueltos por el servicio de registro (tenant, user)
         res.status(201).json({
+            success: true, 
             message: "Usuario registrado correctamente, revisa tu email para activar tu cuenta",
             data
         });
@@ -39,10 +35,7 @@ const loginController = async (req, res, next) => {
         const result = loginSchema.safeParse(req.body);
 
         if(!result.success){
-            return res.status(400).json({
-                error: "Datos no válidos",
-                details: result.error.errors
-            })
+            return next(new CError(ErrorsIndex.VALIDATION_ERROR, result.error.issues));
         }
 
         const { email, password } = result.data;
@@ -65,8 +58,9 @@ const loginController = async (req, res, next) => {
             maxAge: ms(JWT_REFRESH_EXPIRES_IN)
         })
         .status(200).json({
+            success: true,
             message: "Usuario conectado correctamente",
-            user: data.user
+            data: { user: data.user }
         })
     } catch (error) {
         next(error);
@@ -94,6 +88,7 @@ const logoutController = async (req, res, next) => {
         });
 
         res.status(200).json({
+            success: true,
             message: "Usuario desconectado correctamente"
         })
 
@@ -126,6 +121,7 @@ const logoutAllController = async (req, res, next) => {
         });
 
         res.status(200).json({
+            success: true,
             message: "Usuario desconectado correctamente de todos los dispositivos"
         })
 
@@ -139,11 +135,7 @@ const refreshController = async (req, res, next) => {
     try {
         const { refreshToken } = req.cookies;
 
-        if (!refreshToken) {
-            return res.status(401).json({
-                error: "No se ha encontrado la cookie"
-            })
-        }
+        if (!refreshToken) return next(new CError(ErrorsIndex.UNAUTHORIZED));
         
         const data = await authService.refresh(refreshToken);
 
@@ -158,6 +150,7 @@ const refreshController = async (req, res, next) => {
                 maxAge: ms(JWT_EXPIRES_IN)
             })
             .status(200).json({
+                success: true,
                 message: "Token regenerado correctamente"
             })
     } catch (error) {
@@ -182,17 +175,17 @@ const meController = async (req, res, next) => {
             }
         });
 
-        if(!user) {
-            return res.status(401).json({
-                error: "El usuario no existe"
-            })
-        }
+        if(!user) return next(new CError(ErrorsIndex.UNAUTHORIZED));
 
         res.status(200).json({ 
-            user: {
-                ...user,
-                tenantName: tenantInfo.name,
-                tenantSlug: tenantInfo.slug
+            success: true,
+            message: "Usuario identificado con éxito",
+            data: { 
+                user: {
+                    ...user,
+                    tenantName: tenantInfo.name,
+                    tenantSlug: tenantInfo.slug
+                }
             } 
         });
 
@@ -211,19 +204,11 @@ const activationController = async (req, res, next) => {
             where: { activationToken : token}
         })
 
-        if(!user){
-            return res.status(401).json({
-                error: "No existe usuario con ese token"
-            })
-        }
+        if(!user) return next(new CError(ErrorsIndex.UNAUTHORIZED));
 
         const hoursElapsed = (new Date() - new Date(user.activationSentAt));
 
-        if(hoursElapsed > ms("24h")) {
-            return res.status(401).json({
-                error: "El token ha expirado"
-            })
-        }
+        if(hoursElapsed > ms("24h")) return next(new CError(ErrorsIndex.UNAUTHORIZED));
 
         await prisma.user.update({
             where: { id: user.id },
@@ -236,6 +221,7 @@ const activationController = async (req, res, next) => {
         })
 
         res.status(200).json({
+            success: true,
             message: "El usuario ha sido activado con éxito"
         })
         
