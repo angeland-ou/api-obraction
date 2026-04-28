@@ -1,4 +1,6 @@
 const { prisma } = require("../../config/db");
+const { CError, ErrorsIndex } = require("../../config/misc/errors");
+const { handlePrismaError } = require("../../utils/handlePrismaError");
 const { getSignedUrl, deleteFile } = require("../../services/storage/storageService");
  
 const getDocumentSignedUrl = async (documentId, tenantId) => {
@@ -12,9 +14,7 @@ const getDocumentSignedUrl = async (documentId, tenantId) => {
         });
  
         if (!document) {
-            const error = new Error("Documento no encontrado");
-            error.status = 404;
-            throw error;
+            throw new CError(ErrorsIndex.NOT_FOUND, "Documento no encontrado");
         }
  
         // Generamos URL firmada con 1 hora de caducidad
@@ -23,8 +23,7 @@ const getDocumentSignedUrl = async (documentId, tenantId) => {
         return { url: signedUrl };
  
     } catch (error) {
-        console.error("Error generando URL firmada:", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 };
 
@@ -35,9 +34,7 @@ const deleteDocument = async (documentId, tenantId) => {
         });
 
         if (!document) {
-            const error = new Error("Documento no encontrado");
-            error.status = 404;
-            throw error;
+            throw new CError(ErrorsIndex.NOT_FOUND, "Documento no encontrado");
         }
 
         await deleteFile("documents", document.storagePath);
@@ -47,10 +44,9 @@ const deleteDocument = async (documentId, tenantId) => {
         });
 
         return { message: "Documento eliminado con éxito" };
-
+ 
     } catch (error) {
-        console.error("Error eliminando documento:", error.message);
-        throw error;
+        handlePrismaError(error);
     }
 };
 
