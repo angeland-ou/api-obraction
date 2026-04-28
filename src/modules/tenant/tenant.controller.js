@@ -64,6 +64,26 @@ const uploadLogoController = async (req, res, next) => {
     });
 };
 
+const getLogoUrlController = async (req, res, next) => {
+    try {
+        const tenant = await tenantService.getTenant(req.tenant.tenantId);
+
+        if (!tenant.logoPath) {
+            return next(new CError(ErrorsIndex.NOT_FOUND, "Sin logotipo"));
+        }
+
+        const url = await storageService.getSignedUrl('documents', tenant.logoPath);
+
+        res.status(200).json({
+            success: true,
+            message: "Logo encontrado",
+            data: { url }
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
 
 const getGlobalBalanceController = async (req, res, next) => {
     try {
@@ -120,6 +140,7 @@ module.exports = {
     getTenantController,
     updateTenantController,
     uploadLogoController,
+    getLogoUrlController,
     getGlobalBalanceController,
     getTenantSimpleBalanceController
 };
