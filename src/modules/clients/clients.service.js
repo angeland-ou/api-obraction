@@ -79,7 +79,12 @@ const getAllClients = async (tenantId) => {
                 email: true,
                 nif: true,
                 notes: true,
-                createdAt: true
+                createdAt: true,
+                phones: {
+                    select:{
+                        number: true
+                    }
+                }
             }
         });
 
