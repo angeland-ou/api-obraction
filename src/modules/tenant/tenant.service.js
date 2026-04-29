@@ -119,65 +119,113 @@ const updateTenant = async (tenantId, data, file = null) => {
     }
 };
 
-const getGlobalBalance = async (tenantId, projectId = null, dateFrom = null, dateTo = null, order = "desc") => {
+// const getGlobalBalance = async (tenantId, projectId = null, dateFrom = null, dateTo = null, order = "desc") => {
+//     try {
+//         const where = {
+//             tenantId,
+//             deletedAt: null
+//         };
+
+//         if (projectId) where.projectId = projectId;
+
+//         if (dateFrom || dateTo) {
+//             where.movementDate = {};
+
+//             if (dateFrom) {
+//                 // que empiece a las 00:00:00.000
+//                 const start = new Date(dateFrom);
+//                 start.setHours(0, 0, 0, 0);
+//                 where.movementDate.gte = start;
+//             }
+
+//             if (dateTo) {
+//                 // que termine a las 23:59:59.999
+//                 const end = new Date(dateTo);
+//                 end.setHours(23, 59, 59, 999);
+//                 where.movementDate.lte = end;
+//             }
+//         }
+
+//         const movements = await prisma.movement.findMany({
+//             where,
+//             orderBy: { movementDate: order },
+//             select: {
+//                 amount: true,
+//                 ivaAmount: true,
+//                 total: true,
+//                 type: true,
+//                 project: {
+//                     select: { name: true }
+//                 }
+//             }
+//         });
+
+//         let totalIncome = 0;
+//         let totalExpense = 0;
+
+//         let totalIncomeIva = 0;
+//         let totalExpenseIva = 0;
+
+//         for (const mov of movements) {
+//             const total = Number(mov.amount) || 0;
+//             const totalConIva = Number(mov.total) || 0;
+
+//             if (mov.type === "income") {
+//                 totalIncome += total;
+//                 totalIncomeIva += totalConIva;
+//             } else {
+//                 totalExpense += total;
+//                 totalExpenseIva += totalConIva;
+//             }
+//         }
+
+//         const projectsNumber = await prisma.project.count({
+//             where: { tenantId, deletedAt: null }
+//         });
+
+//         const pendingTasks = await prisma.task.count({
+//             where: { tenantId, status: "pending", deletedAt: null }
+//         });
+
+//         return {
+//             // Neto
+//             totalBalance: totalIncome - totalExpense,
+//             totalIncome,
+//             totalExpense,
+            
+//             // Con IVA
+//             totalBalanceIva: totalIncomeIva - totalExpenseIva,
+//             totalIncomeIva,
+//             totalExpenseIva,
+            
+//             projectsNumber,
+//             pendingTasks
+//         };
+
+//     } catch (error) {
+//         handlePrismaError(error);
+//     }
+// };
+
+const getGlobalBalance = async (tenantId) => {
     try {
-        const where = {
-            tenantId,
-            deletedAt: null
-        };
+        const balance = await prisma.$queryRaw`
+            SELECT total_income, total_expenses, balance
+            FROM v_tenant_balance
+            WHERE tenant_id = ${tenantId}::uuid
+        `;
 
-        if (projectId) where.projectId = projectId;
+        const income = await prisma.$queryRaw`
+            SELECT total_amount, total_iva, total_with_iva
+            FROM v_tenant_income
+            WHERE tenant_id = ${tenantId}::uuid
+        `;
 
-        if (dateFrom || dateTo) {
-            where.movementDate = {};
-
-            if (dateFrom) {
-                // que empiece a las 00:00:00.000
-                const start = new Date(dateFrom);
-                start.setHours(0, 0, 0, 0);
-                where.movementDate.gte = start;
-            }
-
-            if (dateTo) {
-                // que termine a las 23:59:59.999
-                const end = new Date(dateTo);
-                end.setHours(23, 59, 59, 999);
-                where.movementDate.lte = end;
-            }
-        }
-
-        const movements = await prisma.movement.findMany({
-            where,
-            orderBy: { movementDate: order },
-            select: {
-                amount: true,
-                ivaAmount: true,
-                total: true,
-                type: true,
-                project: {
-                    select: { name: true }
-                }
-            }
-        });
-
-        let totalIncome = 0;
-        let totalExpense = 0;
-
-        let totalIncomeIva = 0;
-        let totalExpenseIva = 0;
-
-        for (const mov of movements) {
-            const total = Number(mov.amount) || 0;
-            const totalConIva = Number(mov.total) || 0;
-
-            if (mov.type === "income") {
-                totalIncome += total;
-                totalIncomeIva += totalConIva;
-            } else {
-                totalExpense += total;
-                totalExpenseIva += totalConIva;
-            }
-        }
+        const expense = await prisma.$queryRaw`
+            SELECT total_amount, total_iva, total_with_iva
+            FROM v_tenant_expenses
+            WHERE tenant_id = ${tenantId}::uuid
+        `;
 
         const projectsNumber = await prisma.project.count({
             where: { tenantId, deletedAt: null }
@@ -187,17 +235,21 @@ const getGlobalBalance = async (tenantId, projectId = null, dateFrom = null, dat
             where: { tenantId, status: "pending", deletedAt: null }
         });
 
+        const b = balance[0];
+        const inc = income[0];
+        const exp = expense[0];
+
         return {
-            // Neto
-            totalBalance: totalIncome - totalExpense,
-            totalIncome,
-            totalExpense,
-            
-            // Con IVA
-            totalBalanceIva: totalIncomeIva - totalExpenseIva,
-            totalIncomeIva,
-            totalExpenseIva,
-            
+            balance: b ? Number(b.balance) : 0,
+            totalIva: (inc ? Number(inc.total_iva) : 0) - (exp ? Number(exp.total_iva) : 0),
+            balanceWithIva: (inc ? Number(inc.total_with_iva) : 0) - (exp ? Number(exp.total_with_iva) : 0),
+
+            income: inc ? Number(inc.total_amount) : 0,
+            incomeWithIva: inc ? Number(inc.total_with_iva) : 0,
+
+            expense: exp ? Number(exp.total_amount) : 0,
+            expenseWithIva: exp ? Number(exp.total_with_iva) : 0,
+
             projectsNumber,
             pendingTasks
         };
