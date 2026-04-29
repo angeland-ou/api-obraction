@@ -53,7 +53,7 @@ const getAllProjects = async (tenantId) => {
             }
         });
 
-        // usamos la vista de la bbdd para recuperar datos
+        // usamos las vistas de la bbdd para recuperar datos
         const balances = await prisma.$queryRaw`
             SELECT 
                 project_id,
@@ -64,14 +64,46 @@ const getAllProjects = async (tenantId) => {
             WHERE tenant_id = ${tenantId}::uuid
         `;
 
+        const incomes = await prisma.$queryRaw`
+            SELECT 
+                project_id,
+                total_amount,
+                total_iva,
+                total_with_iva
+            FROM v_project_income
+            WHERE tenant_id = ${tenantId}::uuid
+        `;
+
+        const expenses = await prisma.$queryRaw`
+            SELECT 
+                project_id,
+                total_amount,
+                total_iva,
+                total_with_iva
+            FROM v_project_expenses
+            WHERE tenant_id = ${tenantId}::uuid
+        `;
+
         const result = projects.map(project => {
             const balance = balances.find(bal => bal.project_id === project.id);
+            const income = incomes.find(inc => inc.project_id === project.id);
+            const expense = expenses.find(exp => exp.project_id === project.id);
             return {
                 ...project,
                 balance: {
                     totalIncome: balance ? Number(balance.total_income) : 0,
                     totalExpenses: balance ? Number(balance.total_expenses) : 0,
                     balance: balance ? Number(balance.balance) : 0
+                },
+                income: {
+                    totalAmount: income ? Number(income.total_amount) : 0,
+                    totalIva: income ? Number(income.total_iva) : 0,
+                    totalWithIva: income ? Number(income.total_with_iva) : 0,
+                },
+                expense: {
+                    totalAmount: expense ? Number(expense.total_amount) : 0,
+                    totalIva: expense ? Number(expense.total_iva) : 0,
+                    totalWithIva: expense ? Number(expense.total_with_iva) : 0,
                 }
             };
         });
@@ -198,7 +230,63 @@ const getProjectById = async (projectId, tenantId) => {
             throw new CError(ErrorsIndex.NOT_FOUND, "Proyecto no encontrado");
         }
 
-        return result;
+         const balances = await prisma.$queryRaw`
+            SELECT 
+                project_id,
+                total_income,
+                total_expenses,
+                balance
+            FROM v_project_balance
+            WHERE tenant_id = ${tenantId}::uuid
+            AND project_id = ${projectId}::uuid
+        `;
+
+        const incomes = await prisma.$queryRaw`
+            SELECT 
+                project_id,
+                total_amount,
+                total_iva,
+                total_with_iva
+            FROM v_project_income
+            WHERE tenant_id = ${tenantId}::uuid
+            AND project_id = ${projectId}::uuid
+        `;
+
+        const expenses = await prisma.$queryRaw`
+            SELECT 
+                project_id,
+                total_amount,
+                total_iva,
+                total_with_iva
+            FROM v_project_expenses
+            WHERE tenant_id = ${tenantId}::uuid
+            AND project_id = ${projectId}::uuid
+        `;
+
+        const balance = balances.find(bal => bal.project_id === projectId);
+        const income = incomes.find(inc => inc.project_id === projectId);
+        const expense = expenses.find(exp => exp.project_id === projectId);
+        
+        const results = {
+                ...result,
+                balance: {
+                    totalIncome: balance ? Number(balance.total_income) : 0,
+                    totalExpenses: balance ? Number(balance.total_expenses) : 0,
+                    balance: balance ? Number(balance.balance) : 0
+                },
+                income: {
+                    totalAmount: income ? Number(income.total_amount) : 0,
+                    totalIva: income ? Number(income.total_iva) : 0,
+                    totalWithIva: income ? Number(income.total_with_iva) : 0,
+                },
+                expense: {
+                    totalAmount: expense ? Number(expense.total_amount) : 0,
+                    totalIva: expense ? Number(expense.total_iva) : 0,
+                    totalWithIva: expense ? Number(expense.total_with_iva) : 0,
+                }
+            }
+
+        return results;
 
     } catch (error) {
         handlePrismaError(error);
