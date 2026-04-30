@@ -209,12 +209,6 @@ const updateTenant = async (tenantId, data, file = null) => {
 
 const getGlobalBalance = async (tenantId) => {
     try {
-        const balance = await prisma.$queryRaw`
-            SELECT total_income, total_expenses, balance
-            FROM v_tenant_balance
-            WHERE tenant_id = ${tenantId}::uuid
-        `;
-
         const income = await prisma.$queryRaw`
             SELECT total_amount, total_iva, total_with_iva
             FROM v_tenant_income
@@ -235,19 +229,21 @@ const getGlobalBalance = async (tenantId) => {
             where: { tenantId, status: "pending", deletedAt: null }
         });
 
-        const b = balance[0];
         const inc = income[0];
         const exp = expense[0];
 
+        const incomeAmount = inc ? Number(inc.total_amount) : 0;
+        const expenseAmount = exp ? Number(exp.total_amount) : 0;
+
         return {
-            balance: b ? Number(b.balance) : 0,
+            balance: incomeAmount - expenseAmount,  // sin IVA
             totalIva: (inc ? Number(inc.total_iva) : 0) - (exp ? Number(exp.total_iva) : 0),
             balanceWithIva: (inc ? Number(inc.total_with_iva) : 0) - (exp ? Number(exp.total_with_iva) : 0),
 
-            income: inc ? Number(inc.total_amount) : 0,
+            income: incomeAmount,
             incomeWithIva: inc ? Number(inc.total_with_iva) : 0,
 
-            expense: exp ? Number(exp.total_amount) : 0,
+            expense: expenseAmount,
             expenseWithIva: exp ? Number(exp.total_with_iva) : 0,
 
             projectsNumber,
