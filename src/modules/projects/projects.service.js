@@ -49,7 +49,17 @@ const getAllProjects = async (tenantId) => {
                 id: true,
                 name: true,
                 status: true,
-                startDate: true
+                startDate: true,
+                _count: {
+                    select: {
+                        tasks: {
+                            where: {
+                                status: 'pending',
+                                deletedAt: null
+                            }
+                        }
+                    }
+                }
             }
         });
 
@@ -90,6 +100,7 @@ const getAllProjects = async (tenantId) => {
             const expense = expenses.find(exp => exp.project_id === project.id);
             return {
                 ...project,
+                pendingTasks: project._count.tasks,
                 balance: {
                     totalIncome: balance ? Number(balance.total_income) : 0,
                     totalExpenses: balance ? Number(balance.total_expenses) : 0,
