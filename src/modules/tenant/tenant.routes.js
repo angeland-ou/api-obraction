@@ -6,6 +6,7 @@ const {
     updateTenantController,
     uploadLogoController,
     getLogoUrlController,
+    deleteLogoController,
     getGlobalBalanceController,
     getTenantSimpleBalanceController
 } = require("./tenant.controller");
@@ -16,6 +17,7 @@ router.get("/", getTenantController);
 router.put("/", updateTenantController);
 router.post("/logo", uploadLogoController);
 router.get("/logo", getLogoUrlController);
+router.delete('/logo', deleteLogoController);
 router.get("/balance", getGlobalBalanceController);
 router.get("/simple-balance", getTenantSimpleBalanceController);
 

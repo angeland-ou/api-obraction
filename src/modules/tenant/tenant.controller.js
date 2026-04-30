@@ -64,6 +64,19 @@ const uploadLogoController = async (req, res, next) => {
     });
 };
 
+const deleteLogoController = async (req, res) => {
+    try {
+        const result = await tenantService.deleteLogo(req.tenant.tenantId);
+        res.status(200).json({
+            success: true,
+            message: "Logotipo eliminado correctamente",
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 const getLogoUrlController = async (req, res, next) => {
     try {
         const tenant = await tenantService.getTenant(req.tenant.tenantId);
@@ -140,6 +153,7 @@ module.exports = {
     getTenantController,
     updateTenantController,
     uploadLogoController,
+    deleteLogoController,
     getLogoUrlController,
     getGlobalBalanceController,
     getTenantSimpleBalanceController

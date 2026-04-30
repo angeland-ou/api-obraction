@@ -1,7 +1,7 @@
 const { prisma } = require("../../config/db");
 const { CError, ErrorsIndex } = require("../../config/misc/errors");
 const { handlePrismaError } = require("../../utils/handlePrismaError");
-const { uploadFile, getPublicUrl } = require("../../services/storage/storageService");
+const { uploadFile, getPublicUrl, deleteFile } = require("../../services/storage/storageService");
 
 const getTenant = async (tenantId) => {
     try {
@@ -59,6 +59,38 @@ const uploadLogo = async (tenantId, file) => {
         });
 
         return tenant;
+
+    } catch (error) {
+        handlePrismaError(error);
+    }
+};
+
+const deleteLogo = async (tenantId) => {
+    try {
+        const tenant = await prisma.tenant.findFirst({
+            where: { id: tenantId, deletedAt: null },
+            select: { logoPath: true }
+        });
+
+        if (!tenant) {
+            throw new CError(ErrorsIndex.NOT_FOUND, "Empresa no encontrada");
+        }
+
+        if (!tenant.logoPath) {
+            throw new CError(ErrorsIndex.NOT_FOUND, "No hay logotipo que eliminar");
+        }
+
+        await deleteFile("company", tenant.logoPath);
+
+        await prisma.tenant.update({
+            where: { id: tenantId },
+            data: {
+                logoPath: null,
+                updatedAt: new Date()
+            }
+        });
+
+        return { message: "Logotipo eliminado correctamente" };
 
     } catch (error) {
         handlePrismaError(error);
@@ -283,6 +315,7 @@ module.exports = {
     getTenant,
     updateTenant,
     uploadLogo,
+    deleteLogo,
     getGlobalBalance,
     getTenantSimpleBalance
 };
