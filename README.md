@@ -40,8 +40,8 @@ API REST para la gestión integral de obras y proyectos de construcción. Backen
 ### 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/tu-usuario/obraction-api.git
-cd obraction-api
+git clone https://github.com/angeland-ou/api-obraction.git
+cd api-obraction
 ```
 
 ### 2. Instalar dependencias
