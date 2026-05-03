@@ -1,23 +1,25 @@
 if (process.env.NODE_ENV !== "production") {
-  require("dotenv").config({ path: ".env.local" });
+    require("dotenv").config({ path: ".env.local" });
 }
 
 const PORT = process.env.PORT;
 const DATABASE_URL = process.env.DATABASE_URL;
 const DATABASE_NAME = process.env.DATABASE_NAME;
-const CORS_ORIGIN=process.env.CORS_ORIGIN;
-const JWT_SECRET=process.env.JWT_SECRET;
-const JWT_EXPIRES_IN=process.env.JWT_EXPIRES_IN;
-const JWT_REFRESH_EXPIRES_IN=process.env.JWT_REFRESH_EXPIRES_IN;
-const SUPABASE_URL=process.env.SUPABASE_URL;
-const SUPABASE_KEY=process.env.SUPABASE_KEY;
-const SUPABASE_SERVICE_KEY=process.env.SUPABASE_SERVICE_KEY;
-const STORAGE_PROVIDER=process.env.STORAGE_PROVIDER;
-const COOKIE_DOMAIN=process.env.COOKIE_DOMAIN;
-const RESEND_API_KEY=process.env.RESEND_API_KEY;
-const FRONTEND_URL=process.env.FRONTEND_URL;
-const RESEND_TEST_TO_EMAIL=process.env.RESEND_TEST_TO_EMAIL;
-const RESEND_FROM_EMAIL=process.env.RESEND_FROM_EMAIL
+const CORS_ORIGIN = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',')
+    : ['http://localhost:5173'];
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN;
+const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+const STORAGE_PROVIDER = process.env.STORAGE_PROVIDER;
+const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN;
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const FRONTEND_URL = process.env.FRONTEND_URL;
+const RESEND_TEST_TO_EMAIL = process.env.RESEND_TEST_TO_EMAIL;
+const RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL
 
 const BCRYPT_SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12;
 
