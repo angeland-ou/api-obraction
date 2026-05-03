@@ -45,7 +45,14 @@ app.use(helmet({
 }));
 
 app.use(cors({
-    origin: CORS_ORIGIN,
+    origin: (origin, callback) => {
+        const allowed = CORS_ORIGIN; // ya es un array desde constants.js
+        if (!origin || allowed.includes(origin)) {
+            callback(null, origin); // devuelve solo el origen que coincide
+        } else {
+            callback(new Error('No permitido por CORS'));
+        }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
